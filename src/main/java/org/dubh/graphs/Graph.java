@@ -3,7 +3,10 @@ package org.dubh.graphs;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 
 public class Graph<T> {
@@ -67,7 +70,6 @@ public class Graph<T> {
     state.time++;
   }
 
-
   private class DfsState {
     private final Map<T, DfsData> dfsData = new HashMap<>();
     private int time = 0;
@@ -104,5 +106,95 @@ public class Graph<T> {
     public String toString() {
       return "DfsData[color=" + color + " predecessor=" + predecessor + "]";
     }
+  }
+
+  public class KosarajuState {
+    final Set<T> visited = new LinkedHashSet<>();
+    final Map<T, Set<T>> components = new HashMap<>();
+    final Map<T, T> componentToRoot = new HashMap<>();
+    final Set<T> componentized = new LinkedHashSet<>();
+    List<Node<T>> orderedNodes = new LinkedList<Node<T>>();
+
+    boolean isVisited(Node<T> n) {
+      return visited.contains(n.value);
+    }
+
+    void setVisited(Node<T> n) {
+      visited.add(n.value);
+    }
+
+    void addComponent(Node<T> root, Node<T> item) {
+      Set<T> nodes = components.get(root.value);
+      if (nodes == null) {
+        nodes = new LinkedHashSet<>();
+        components.put(root.value, nodes);
+      }
+      nodes.add(item.value);
+      componentized.add(item.value);
+      componentToRoot.put(item.value, root.value);
+    }
+
+    boolean isComponentized(Node<T> n) {
+      return componentized.contains(n.value);
+    }
+
+    public Map<T, Set<T>> getComponents() {
+      return components;
+    }
+
+    // Returns the component graph, as a set of root -> dependee roots
+    public Map<T, Set<T>> getComponentGraph() {
+      Map<T, Set<T>> result = new HashMap<>();
+      for (Map.Entry<T, Set<T>> entry : components.entrySet()) {
+        T componentRoot = entry.getKey();
+        Set<T> deps = result.get(componentRoot);
+        if (deps == null) {
+          deps = new LinkedHashSet<>();
+          result.put(componentRoot, deps);
+        }
+        for (T componentInGroup : entry.getValue()) {
+          Set<Node<T>> outGoingDeps = getNode(componentInGroup).uses;
+          for (Node<T> n : outGoingDeps) {
+            T depComponentRoot = componentToRoot.get(n.value);
+            if (!depComponentRoot.equals(componentRoot)) {
+              deps.add(depComponentRoot);
+            }
+          }
+
+        }
+      }
+      return result;
+    }
+  }
+
+  public KosarajuState kosaraju() {
+    KosarajuState state = new KosarajuState();
+    for (Node<T> n : valueToNode.values()) {
+      kosarajuVisit(state, n);
+    }
+
+    for (Node<T> n : state.orderedNodes) {
+      kosarajuAssign(state, n, n);
+    }
+    return state;
+  }
+
+  private void kosarajuAssign(KosarajuState state, Node<T> root, Node<T> n) {
+    if (state.isComponentized(n))
+      return;
+    state.addComponent(root, n);
+    for (Node<T> dep : n.usedBy) {
+      kosarajuAssign(state, root, dep);
+    }
+  }
+
+  private void kosarajuVisit(KosarajuState state, Node<T> n) {
+    if (state.isVisited(n))
+      return;
+    state.setVisited(n);
+    for (Node<T> dep : n.uses) {
+      kosarajuVisit(state, dep);
+    }
+    state.orderedNodes.add(0, n);
   }
 }
