@@ -30,6 +30,10 @@ public class Node<T> {
     return Objects.equals(value, other.value);
   }
 
+  public T getValue() {
+    return value;
+  }
+
   @Override
   public String toString() {
     return String.valueOf(value);
