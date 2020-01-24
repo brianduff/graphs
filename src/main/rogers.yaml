@@ -1,0 +1,6 @@
+metadata:
+  name: main
+
+java:
+  source: java
+  output: ../../out/main.jar

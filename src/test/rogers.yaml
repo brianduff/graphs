@@ -1,0 +1,9 @@
+metadata:
+  name: main
+
+java:
+  source: java
+  output: ../../out/tests.jar
+  deps:
+    - ../main/main-rgr.yaml
+    - ../../third-party/junit/rogers.yaml

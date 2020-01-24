@@ -1,0 +1,8 @@
+metadata:
+  name: junit
+
+java-jar:
+  classpath:
+    - junit-4.13.jar
+  sourcepath:
+    - junit-4.13-sources.jar
